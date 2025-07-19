@@ -2,7 +2,8 @@ package controller
 
 import (
 	"context"
-	"log"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -34,7 +35,7 @@ func (controller *UserController) GetAllData(w http.ResponseWriter, r *http.Requ
 			Errors:     err.Error(),
 			StatusCode: http.StatusInternalServerError,
 		}
-		log.Fatal(err)
+		fmt.Println(err)
 		util.WriteJson(w, ErrorResp, ErrorResp.StatusCode)
 	}
 
@@ -46,6 +47,40 @@ func (controller *UserController) GetAllData(w http.ResponseWriter, r *http.Requ
 	}
 	util.WriteJson(w, SucessResp, SucessResp.StatusCode)
 
+}
+
+func (controller *UserController) AddNewPerson(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	var newUser model.UserModel
+	err := json.NewDecoder(r.Body).Decode(&newUser)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	lastId, err := controller.svc.AddNewData(ctx, newUser)
+
+	if err != nil {
+		ErrorResp := Error{
+			Status:     "BAD REQUEST!",
+			Detail:     "Data yang kamu masukkan tidak valid! harap cek kembali data yang dikirim",
+			Errors:     err.Error(),
+			StatusCode: http.StatusBadRequest,
+		}
+		util.WriteJson(w, ErrorResp, ErrorResp.StatusCode)
+		return
+	}
+
+	SucessResp := Success{
+		Status:     "OK",
+		Detail:     "Berhasil memasukkan data ke database",
+		Data:       lastId,
+		StatusCode: http.StatusCreated,
+	}
+	util.WriteJson(w, SucessResp, SucessResp.StatusCode)
 }
 
 func NewUserController(svc *service.UserService) *UserController {
@@ -60,6 +95,7 @@ func (ctrl *UserController) RegisterRoutes() *chi.Mux {
 
 	r.Route("/api/user", func(r chi.Router) {
 		r.Get("/get-all", ctrl.GetAllData)
+		r.Post("/", ctrl.AddNewPerson)
 	})
 	return r
 }

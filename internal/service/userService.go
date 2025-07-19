@@ -21,6 +21,16 @@ func (svc *UserService) GetAllData(userCtx context.Context) ([]model.UserModel, 
 	return data, nil
 }
 
+func (svc *UserService) AddNewData(userCtx context.Context, newUser model.UserModel) (int, error) {
+	id, err := svc.repo.AddNewData(newUser, userCtx)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
+}
+
 func NewUserService(repo *repository.UserRepo) *UserService {
 	return &UserService{
 		repo: repo,

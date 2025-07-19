@@ -15,7 +15,12 @@ import (
 )
 
 func main() {
-	configs.LoadEnv()
+	var err error
+	err = configs.LoadEnv()
+	if err != nil {
+		panic(err)
+	}
+
 	appConfig := configs.NewConfig()
 	db, err := sql.Open("mysql", appConfig.DbUrl)
 	if err != nil {

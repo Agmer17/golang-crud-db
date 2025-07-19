@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -35,10 +36,14 @@ func (repo *UserRepo) GetAllData(ctx context.Context) ([]model.UserModel, error)
 	sqlString := "SELECT * FROM PERSON"
 	rows, err := repo.DB.QueryContext(ctx, sqlString)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
-	defer rows.Close()
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("failed to close rows: %v", err)
+		}
+	}()
 
 	var listUser []model.UserModel
 
@@ -55,4 +60,31 @@ func (repo *UserRepo) GetAllData(ctx context.Context) ([]model.UserModel, error)
 	}
 
 	return listUser, nil
+}
+
+func (repo *UserRepo) AddNewData(newUser model.UserModel, ctx context.Context) (int, error) {
+	sqlString := `INSERT INTO person (nama, umur, gender)
+					values (?, ?, ?);`
+	stmt, err := repo.DB.PrepareContext(ctx, sqlString)
+
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+
+	defer stmt.Close()
+
+	res, err := stmt.ExecContext(ctx, newUser.Nama, newUser.Umur, newUser.Gender)
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+
+	lastID, _ := res.LastInsertId()
+
+	return int(lastID), nil
+}
+
+func (repo *UserRepo) DeleteData(ctx context.Context, name string) {
+
 }

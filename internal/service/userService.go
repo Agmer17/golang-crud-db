@@ -36,3 +36,7 @@ func NewUserService(repo *repository.UserRepo) *UserService {
 		repo: repo,
 	}
 }
+
+func (svc *UserService) DeletePersonData(userCtx context.Context, name string) {
+
+}
